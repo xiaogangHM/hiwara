@@ -40,7 +40,7 @@ jobs:
                      -e 's/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = "";/g' \
                      "$PBX" || true
 
-      - name: Build iOS app (arm64 device, fallback direct xcodebuild no-sign)
+      - name: Build iOS app (arm64 device)
         run: |
           set +e
           npx tauri ios build --target aarch64
@@ -48,10 +48,7 @@ jobs:
           set -e
           echo "tauri ios build exit code: $BUILD_EXIT"
           if [ $BUILD_EXIT -ne 0 ] && [ $BUILD_EXIT -ne 70 ]; then
-            echo "tauri build failed ($BUILD_EXIT), falling back to direct xcodebuild without signing"
-            cd src-tauri/gen/apple
-            pod install || true
-            xcodebuild -workspace hiwara.xcodeproj/project.xcworkspace -scheme hiwara_iOS -configuration release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+            exit $BUILD_EXIT
           fi
 
       - name: Locate and package IPA
