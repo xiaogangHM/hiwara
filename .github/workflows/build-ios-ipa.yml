@@ -1,3 +1,4 @@
+最新完整版，直接整份替换（编辑页全选旧内容删除后粘贴，Commit）：
 # Hiwara iOS ipa 云端构建 Workflow
 # 用法：放到 fork 仓库的 .github/workflows/ 下，推送后在 Actions 页手动触发即可。
 # 产物：未签名（ad-hoc 签名）的 Hiwara-unsigned.ipa，可配合 AltStore / SideStore / 爱思助手等侧载。
@@ -39,6 +40,13 @@ jobs:
                      -e 's/CODE_SIGN_IDENTITY = "Apple Development";/CODE_SIGN_IDENTITY = "";/g' \
                      -e 's/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = "";/g' \
                      "$PBX" || true
+          # 直接向工程注入 CODE_SIGNING_ALLOWED=NO（最高优先级，彻底关闭签名检查）
+          sed -i '' 's/buildSettings = {/buildSettings = {\nCODE_SIGNING_ALLOWED = NO;/g' "$PBX" || true
+          # 兜底：同步注入所有 xcconfig
+          find src-tauri/gen/apple -name "*.xcconfig" -not -path "*/Pods/*" | while read f; do
+            echo "inject no-sign into: $f"
+            grep -q "CODE_SIGNING_ALLOWED" "$f" || printf "\nCODE_SIGNING_ALLOWED = NO\n" >> "$f"
+          done
 
       - name: Build iOS app (arm64 device)
         run: |
