@@ -47,6 +47,15 @@ jobs:
             grep -q "CODE_SIGNING_ALLOWED" "$f" || printf "\nCODE_SIGNING_ALLOWED = NO\n" >> "$f"
           done
 
+      - name: Configure git auth for SwiftPM
+        run: |
+          # SwiftPM 构建本地插件的 Swift 包时会 clone tauri-apps/tauri-plugin-ios，
+          # runner 上匿名 git 请求会被 GitHub 要求认证，注入 token 认证头即可通过。
+          git config --global --unset-all http.https://github.com/.extraheader || true
+          git config --global --unset-all credential.helper || true
+          AUTH="$(printf 'x-access-token:%s' "${{ secrets.GITHUB_TOKEN }}" | base64)"
+          git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic $AUTH"
+
       - name: Build iOS app (arm64 device)
         run: |
           set +e
